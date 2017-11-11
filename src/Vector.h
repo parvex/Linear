@@ -27,119 +27,183 @@ public:
 
 private:
 
-	int allocated;
-	int size;
-
-
+	size_t capacity = 0;
+	size_t size = 0;
+	Type* tab = NULL;
 
 public:
 
   Vector()
-  {}
+  {
+  }
 
   Vector(std::initializer_list<Type> l)
   {
-    (void)l; // disables "unused argument" warning, can be removed when method is implemented.
-    throw std::runtime_error("TODO");
+	  size = l.size();
+	  size_t computeAlloc;
+	  for(computeAlloc = 8; computeAlloc <= size; computeAlloc *= 2);
+	  capacity = computeAlloc;
+	  tab = new Type[capacity];
+	  unsigned i = 0;
+	  for (auto iter = l.begin(); iter != l.end(); ++i, ++iter)
+		  tab[i] = *iter;
   }
 
   Vector(const Vector& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  size = other.size;
+	  capacity = other.capacity;
+	  tab = new Type[capacity];
+
+	  for (size_t i = 0; i < size; ++i)
+		  tab[i] = other[i];
   }
 
   Vector(Vector&& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  size = other.size;
+	  capacity = other.capacity;
+	  tab = other.tab;
+	  other.tab = NULL;
+	  other.size = 0;
+	  other.capacity = 0;
   }
 
   ~Vector()
-  {}
+  {
+	  delete[] tab;
+  }
 
   Vector& operator=(const Vector& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	size = other.size;
+	for (unsigned i = 0; i < other.size; ++i)
+    {
+		tab[i] = other[i];
+	}
+	return *this;
   }
 
   Vector& operator=(Vector&& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  erase(cbegin(), cend());
+	  size = other.size;
+	  size_t tempCapacity = capacity;
+	  capacity = other.capacity;
+	  Type* tempTab = tab;
+	  tab = other.tab;
+	  other.tab = tempTab;
+	  other.size = 0;
+	  other.capacity = tempCapacity;
+
+	  return *this;
   }
 
   bool isEmpty() const
   {
-    throw std::runtime_error("TODO");
+	  return size == 0;
   }
 
   size_type getSize() const
   {
-    throw std::runtime_error("TODO");
+	  return size;
   }
 
   void append(const Type& item)
   {
-    (void)item;
-    throw std::runtime_error("TODO");
+	  insert(cend(), item);
   }
 
   void prepend(const Type& item)
   {
-    (void)item;
-    throw std::runtime_error("TODO");
+	  insert(cbegin(), item);
   }
 
   void insert(const const_iterator& insertPosition, const Type& item)
   {
-    (void)insertPosition;
-    (void)item;
-    throw std::runtime_error("TODO");
+	  unsigned position = insertPosition.index;
+	  if (size >= capacity)
+	  {
+		  for (capacity = 8; capacity <= size; capacity *= 2);
+		  Type* temp = new Type[capacity];
+		  if (tab)
+		  {
+			  for (unsigned i = 0; i < position; i++)
+				  temp[i] = tab[i];
+			  for (unsigned i = position; i < size; i++)
+				  temp[i + 1] = tab[i];
+			  delete[] tab;
+		  }
+		  tab = temp;
+	  }
+	  else
+	  {
+		  for (unsigned i = size; i != position; --i)
+			  tab[i] = tab[i - 1];
+	  }
+	  tab[position] = item;
+	  ++size;
   }
 
   Type popFirst()
   {
-    throw std::runtime_error("TODO");
+		Type temp = *cbegin();
+		erase(begin(), begin() + 1);
+		return temp;
   }
 
   Type popLast()
   {
-    throw std::runtime_error("TODO");
+	Type temp = *(cend() - 1);
+	erase(end() - 1, end());
+	return temp;
   }
 
   void erase(const const_iterator& possition)
   {
-    (void)possition;
-    throw std::runtime_error("TODO");
+	  erase(possition, possition + 1);
   }
 
   void erase(const const_iterator& firstIncluded, const const_iterator& lastExcluded)
   {
-    (void)firstIncluded;
-    (void)lastExcluded;
-    throw std::runtime_error("TODO");
+	  unsigned first = firstIncluded.index;
+	  unsigned last = lastExcluded.index;
+	  if (size && first >= 0 && first < size && last <= size && last >= 0)
+	  {
+
+		  for (unsigned i = first; i < last; ++i)
+			  tab[i].~value_type();
+		  for (unsigned i = last, j = 0; i < size; ++i, ++j)
+		  {
+			  tab[first + j] = tab[i];
+		  }
+
+		  size = size - last + first;
+	  }
+	  else
+		  throw std::out_of_range("Out of range");
   }
 
   iterator begin()
   {
-    throw std::runtime_error("TODO");
+	  return iterator(this, 0);
   }
 
   iterator end()
   {
-    throw std::runtime_error("TODO");
+	  iterator test(this, size);
+	  return iterator(this, size);
   }
 
   const_iterator cbegin() const
   {
-    throw std::runtime_error("TODO");
+	  return const_iterator(this, 0);
   }
 
   const_iterator cend() const
   {
-    throw std::runtime_error("TODO");
+	  const_iterator test(this, size);
+	  return test;
   }
 
   const_iterator begin() const
@@ -150,6 +214,15 @@ public:
   const_iterator end() const
   {
     return cend();
+  }
+
+  const Type& operator[](unsigned i) const
+  {
+	  return tab[i];
+  }
+  Type& operator[](unsigned i)
+  {
+	  return tab[i];
   }
 };
 
@@ -162,57 +235,89 @@ public:
   using difference_type = typename Vector::difference_type;
   using pointer = typename Vector::const_pointer;
   using reference = typename Vector::const_reference;
+  friend class Vector<Type>;
+private:
+	const Vector* vecPtr;
+	size_t index;
+
+public:
 
   explicit ConstIterator()
-  {}
+  {
+  }
+
+  ConstIterator(const ConstIterator& other) : vecPtr(other.vecPtr), index(other.index) {}
+
+  ConstIterator(const Vector* ptr, size_t indx) : vecPtr(ptr), index(indx) {}
 
   reference operator*() const
   {
-    throw std::runtime_error("TODO");
+	  if (index < vecPtr->getSize())
+		  return (*vecPtr)[index];
+	  else
+		  throw std::out_of_range("Out of range!");
   }
 
   ConstIterator& operator++()
-  {
-    throw std::runtime_error("TODO");
+  {	
+	  if (index < vecPtr->getSize())
+	  {
+		  index++;
+		  return *this;
+	  }
+	  else
+		  throw std::out_of_range("Out of range!");
   }
 
   ConstIterator operator++(int)
   {
-    throw std::runtime_error("TODO");
+	  ConstIterator iterator(*this);   
+	  ++(*this);              
+	  return iterator;
   }
 
   ConstIterator& operator--()
   {
-    throw std::runtime_error("TODO");
+	  if (index)
+	  {
+		  index--;
+		  return *this;
+	  }
+	  else
+		  throw std::out_of_range("Out of range");
   }
 
   ConstIterator operator--(int)
   {
-    throw std::runtime_error("TODO");
+
+	  if (index)
+	  {
+		  ConstIterator iterator(*this);
+		  ++(*this);
+		  return iterator;
+	  }
+	  else
+		  throw std::out_of_range("Out of range");
   }
 
   ConstIterator operator+(difference_type d) const
   {
-    (void)d;
-    throw std::runtime_error("TODO");
+	  return ConstIterator(vecPtr, index+d);
   }
 
   ConstIterator operator-(difference_type d) const
   {
-    (void)d;
-    throw std::runtime_error("TODO");
+	  return ConstIterator(vecPtr, index-d);
   }
 
   bool operator==(const ConstIterator& other) const
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  return other.vecPtr == vecPtr && other.index == index;
   }
 
   bool operator!=(const ConstIterator& other) const
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  return !(other.vecPtr == vecPtr && other.index == index);
   }
 };
 
@@ -223,12 +328,17 @@ public:
   using pointer = typename Vector::pointer;
   using reference = typename Vector::reference;
 
+
+public:
+
   explicit Iterator()
   {}
 
-  Iterator(const ConstIterator& other)
-    : ConstIterator(other)
+  Iterator(const ConstIterator& other) : 
+	  ConstIterator(other) 
   {}
+
+  Iterator(const Vector* ptr, size_t indx) : ConstIterator(ptr, indx) {}
 
   Iterator& operator++()
   {

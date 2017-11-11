@@ -25,112 +25,200 @@ public:
   using iterator = Iterator;
   using const_iterator = ConstIterator;
 
+private:
+	struct Node 
+	{
+		Type elem;
+		Node* next = NULL;
+		Node* prev = NULL;
+		Node()  {}
+		Node(const Type el) : elem(el){}
+	};
+
+
+	Node* head = NULL;
+	Node* last = NULL;
+	size_t size = 0;
+
+public:
+
   LinkedList()
   {}
 
   LinkedList(std::initializer_list<Type> l)
   {
-    (void)l; // disables "unused argument" warning, can be removed when method is implemented.
-    throw std::runtime_error("TODO");
+	  for (auto it = l.begin(); it != l.end(); ++it)
+		  append(*it);
   }
 
   LinkedList(const LinkedList& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  for (auto it = other.begin(); it != other.end(); ++it)
+		  append(*it);
+	  
   }
 
   LinkedList(LinkedList&& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  erase(begin(), end());
+	  size = other.size;
+	  head = other.head;
+	  last = other.last;
+	  other.head = NULL;
+	  other.last = NULL;
+	  other.size = 0;
   }
 
   ~LinkedList()
-  {}
+  {
+	  erase(begin(), end());
+  }
 
   LinkedList& operator=(const LinkedList& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  if (&other == this) 
+		  return *this;
+	  erase(begin(), end());
+	  for (auto it = other.cbegin(); it != other.cend(); ++it)
+		  append(*it);
+	  return *this;
   }
 
   LinkedList& operator=(LinkedList&& other)
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  erase(begin(), end());
+	  size = other.size;
+	  head = other.head;
+	  last = other.last;
+	  other.head = NULL;
+	  other.last = NULL;
+	  other.size = 0;
+	  return *this;
   }
 
   bool isEmpty() const
   {
-    throw std::runtime_error("TODO");
+	  return size == 0;
   }
 
   size_type getSize() const
   {
-    throw std::runtime_error("TODO");
+	  return size;
   }
 
   void append(const Type& item)
   {
-    (void)item;
-    throw std::runtime_error("TODO");
+	  insert(end(), item);
   }
 
   void prepend(const Type& item)
   {
-    (void)item;
-    throw std::runtime_error("TODO");
+	  insert(begin(), item);
   }
 
   void insert(const const_iterator& insertPosition, const Type& item)
   {
-    (void)insertPosition;
-    (void)item;
-    throw std::runtime_error("TODO");
+	  Node* addedNode = new Node(item);
+	  if (insertPosition == cbegin())
+	  {
+		  if (head)
+		  {
+			  addedNode->next = head;
+			  head->prev = addedNode;
+			  head = addedNode;
+		  }
+		  else
+			  head = last = addedNode;
+	  }
+	  else if (insertPosition == cend())
+	  {
+		  if (last)
+		  {
+			  addedNode->prev = last;
+			  last->next = addedNode; ////
+			  last = addedNode;
+		  }
+		  else
+			  head = last = addedNode;
+	  }
+	  else
+	  {
+		  addedNode->next = const_cast<Node*>(insertPosition.node);
+		  addedNode->prev = const_cast<Node*>(insertPosition.node->prev);
+		  addedNode->prev->next = addedNode;
+		  addedNode->next->prev = addedNode;
+	  }
+	  ++size;
   }
 
   Type popFirst()
   {
-    throw std::runtime_error("TODO");
+	  Type temp = *(cbegin());
+	  erase(cbegin(), cbegin()+1);
+	  return temp;
   }
 
   Type popLast()
   {
-    throw std::runtime_error("TODO");
+	  Type temp = *(cend() - 1);
+	  erase(cend() - 1, cend());
+	  return temp;
   }
 
   void erase(const const_iterator& possition)
   {
-    (void)possition;
-    throw std::runtime_error("TODO");
+    erase(possition, possition+1);
   }
 
   void erase(const const_iterator& firstIncluded, const const_iterator& lastExcluded)
   {
-    (void)firstIncluded;
-    (void)lastExcluded;
-    throw std::runtime_error("TODO");
+	  if (isEmpty() || firstIncluded == lastExcluded || firstIncluded.node == NULL) return;
+	  Node* firstNode = const_cast<Node*>(firstIncluded.node);
+	  Node* lastNode = const_cast<Node*>(lastExcluded.node);
+	  if (firstNode == head) 
+	  { 
+		  head = lastNode; 
+		  if(head)
+			head->prev = NULL;
+	  }
+	  else 
+		  firstNode->prev->next = lastNode;
+	  if (lastNode == NULL)
+	  {
+		  last = firstNode->prev;
+		  if(last)
+			last->next = NULL;
+	  }
+	  else
+		  lastNode->prev = firstNode->prev;
+	  Node* it = firstNode;
+	  while(it != lastNode)
+	  {
+		  it = firstNode->next;
+		  delete firstNode;
+		  firstNode = it;
+		  --size;
+	  }
   }
 
   iterator begin()
   {
-    throw std::runtime_error("TODO");
+	  return iterator(cbegin());
   }
 
   iterator end()
   {
-    throw std::runtime_error("TODO");
+	  return iterator(cend());
   }
 
   const_iterator cbegin() const
   {
-    throw std::runtime_error("TODO");
+	  return const_iterator(this, head);
   }
 
   const_iterator cend() const
   {
-    throw std::runtime_error("TODO");
+	  return const_iterator(this, nullptr);
   }
 
   const_iterator begin() const
@@ -154,56 +242,82 @@ public:
   using pointer = typename LinkedList::const_pointer;
   using reference = typename LinkedList::const_reference;
 
-  explicit ConstIterator()
+  friend LinkedList<Type>;
+ 
+private:
+	const LinkedList* listPtr;
+	const Node* node;
+public:
+
+  explicit ConstIterator() : listPtr(NULL), node(NULL)
   {}
+
+  ConstIterator(const LinkedList* listPt, const Node* nod) : listPtr(listPt), node(nod) {}
 
   reference operator*() const
   {
-    throw std::runtime_error("TODO");
+	  if (node) return node->elem;
+	  else throw std::out_of_range("Out of range");
   }
 
   ConstIterator& operator++()
   {
-    throw std::runtime_error("TODO");
+	  if (node) node = node->next;
+	  else throw std::out_of_range("Out of range");
+	  return *this;
   }
 
   ConstIterator operator++(int)
   {
-    throw std::runtime_error("TODO");
+	  ConstIterator temp(*this);
+	  operator++();
+	  return temp;
   }
 
   ConstIterator& operator--()
   {
-    throw std::runtime_error("TODO");
+	  if (node)
+		  if (node->prev)
+			  node = node->prev;
+		  else throw std::out_of_range("Out of range");
+	  else
+		  if (listPtr->last)
+			  node = listPtr->last;
+	      else throw std::out_of_range("Out of range");
+	  return *this;
   }
 
   ConstIterator operator--(int)
   {
-    throw std::runtime_error("TODO");
+	  ConstIterator temp(*this);
+	  operator--();
+	  return temp;
   }
 
   ConstIterator operator+(difference_type d) const
   {
-    (void)d;
-    throw std::runtime_error("TODO");
+	auto iter = *this;
+	for (int i = 0; i < d; i++)
+		++iter;
+	return iter;
   }
 
   ConstIterator operator-(difference_type d) const
   {
-    (void)d;
-    throw std::runtime_error("TODO");
+	  auto iter = *this;
+	  for (int i = 0; i < d; i++)
+		  --iter;
+	  return iter;
   }
 
   bool operator==(const ConstIterator& other) const
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  return listPtr == other.listPtr && node == other.node;
   }
 
   bool operator!=(const ConstIterator& other) const
   {
-    (void)other;
-    throw std::runtime_error("TODO");
+	  return !(listPtr == other.listPtr && node == other.node);
   }
 };
 
