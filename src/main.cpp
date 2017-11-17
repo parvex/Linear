@@ -24,7 +24,7 @@ void perfomTest()
  std::cout << "-----------------------------------------------------------------------\n";
  std::cout << "/Time Compare Test Menu/\n";
  std::cout << "/1/ Compare append 100000 int objects\n";
- std::cout << "/2/ Compare erase middle object from collection of 10000000 strings\n";
+ std::cout << "/2/ Compare erase middle object from collection of 10000000 ints\n";
  std::cout << "/3/ Compare pop first object from collection of 100000 doubles\n";
  std::cout << "/4/ Compare pop last object from collection of 100000 doubles\n";
  std::cout << "/5/ Compare insert object in the middle of collection of 1000000 booleans \n";
@@ -81,12 +81,12 @@ void test_appending()
 }
 void test_erasing()
 {
-    aisdi::Vector<std::string> test_vector;
-    aisdi::LinkedList<std::string> test_list;
+    aisdi::Vector<int> test_vector;
+    aisdi::LinkedList<int> test_list;
     for(int i = 0; i<10000000; i++)
     {
-        test_list.append("USUWANKO");
-        test_vector.append("USUWANKO");
+        test_list.append(14);
+        test_vector.append(14);
     }
      auto t1 = std::chrono::high_resolution_clock::now(); 
      test_vector.erase(test_vector.end() - 500000);
