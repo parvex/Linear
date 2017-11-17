@@ -168,7 +168,7 @@ public:
   {
 	  unsigned first = firstIncluded.index;
 	  unsigned last = lastExcluded.index;
-	  if (size && first >= 0 && first < size && last <= size && last >= 0)
+	  if (size && first < size && last <= size)
 	  {
 
 		  for (unsigned i = first; i < last; ++i)
